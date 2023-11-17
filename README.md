@@ -21,9 +21,9 @@ There will be no separate mark for the end of the day.
 
 #### Chunk creation
 
-Checking in in the morning: `chron check-in`
-Tracking a new project-chunk: `chron track <project> <description>`
-Tracking a break chunk: `chron break <description>`
+- Checking in in the morning: `chron check-in`
+- Tracking a new project-chunk: `chron track <project> <description>`
+- Tracking a break chunk: `chron break <description>`
 
 Descriptions will be optional.
 
@@ -39,9 +39,9 @@ their times reliably.
 Projects must be created beforehand, they cannot be created dynamically.
 This way, typos don't lead to the creation of new projects.
 
-Create new project: `chron projects new <name> <description>`
-Delete project: `chron projects delete <name> <description>`
-List projects: `chron projects list`
+- Create new project: `chron projects new <name> <description>`
+- Delete project: `chron projects delete <name> <description>`
+- List projects: `chron projects list`
 
 Deleted projects must still occur in the final analysis, but they cannot be used
 for tracking anymore.
@@ -62,4 +62,10 @@ It must also contain the total amount of work per day.
 It would also be nice to have an acumulation per week/month for each project.
 
 The exact output format is not yet clear, but it should be easily adaptable.
+
+- `chron log today`
+- `chron log yesterday`
+- `chron log <date>`
+- `chron log week <number>`
+- `chron log month <name>`
 
