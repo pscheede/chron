@@ -1,6 +1,9 @@
 # chron
 CLI tool for tracking time
 
+![build workflow](https://github.com/pscheede/chron/actions/workflows/build_test.yml/badge.svg?event=push)
+![lint workflow](https://github.com/pscheede/chron/actions/workflows/lint.yml/badge.svg?event=push)
+
 ## Vision
 
 Build a tool for quick and easy time tracking at work.
