@@ -20,6 +20,7 @@ pub enum Command {
     },
     Reset,
     Log,
+    Version,
 }
 
 #[derive(PartialEq, Debug)]
@@ -64,6 +65,10 @@ pub fn execute_command(command: Command) -> Result<(), CommandExecutionError> {
         Command::Log => Err(CommandExecutionError::MissingImplementation(
             "log".to_string(),
         )),
+        Command::Version => {
+            println!("chron version: {}", env!("GIT_VERSION"));
+            Ok(())
+        }
     }
 }
 
@@ -146,6 +151,7 @@ pub fn parse_command(arguments: Vec<String>) -> Result<Command, ParseCmdError> {
         }
         "reset" => Ok(Command::Reset),
         "log" => Ok(Command::Log),
+        "version" => Ok(Command::Version),
         _ => Err(ParseCmdError::InvalidCommand(arguments[1].clone())),
     }
 }
@@ -338,7 +344,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_invalid_and_missing() {
+    fn test_parse_invalid_and_missing_and_version() {
         let args = to_args(&[""]);
         assert_eq!(parse_command(args), Err(ParseCmdError::NoCommand));
 
@@ -347,6 +353,9 @@ mod tests {
             parse_command(args),
             Err(ParseCmdError::InvalidCommand("invalid".to_string()))
         );
+
+        let args = to_args(&["", "version"]);
+        assert_eq!(parse_command(args), Ok(Command::Version));
     }
 
     #[test]
