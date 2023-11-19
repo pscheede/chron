@@ -1,6 +1,6 @@
 use crate::config;
 use crate::file_handling;
-use chrono::NaiveTime;
+use chrono::{NaiveDate, NaiveTime};
 use serde::{Deserialize, Serialize};
 use std::fs;
 
@@ -19,7 +19,7 @@ pub enum Command {
         description: Option<String>,
     },
     Reset,
-    Log,
+    Log(LogSubCommand),
     Version,
 }
 
@@ -28,6 +28,13 @@ pub enum ProjectsSubCommand {
     Add(String),
     Delete(String),
     List,
+}
+
+#[derive(PartialEq, Debug)]
+pub enum LogSubCommand {
+    Day(NaiveDate),
+    Week(NaiveDate),
+    Month(NaiveDate),
 }
 
 pub fn execute_command(command: Command) -> Result<(), CommandExecutionError> {
@@ -62,9 +69,15 @@ pub fn execute_command(command: Command) -> Result<(), CommandExecutionError> {
             description,
         } => track(end_time, project, description),
         Command::Reset => reset(),
-        Command::Log => Err(CommandExecutionError::MissingImplementation(
-            "log".to_string(),
-        )),
+        Command::Log(subcommand) => match subcommand {
+            LogSubCommand::Day(date) => crate::logging::log_day(date),
+            LogSubCommand::Week(date) => Err(CommandExecutionError::MissingImplementation(
+                "log week".to_string(),
+            )),
+            LogSubCommand::Month(date) => Err(CommandExecutionError::MissingImplementation(
+                "log month".to_string(),
+            )),
+        },
         Command::Version => {
             println!("chron version: {}", env!("GIT_VERSION"));
             Ok(())
@@ -150,7 +163,9 @@ pub fn parse_command(arguments: Vec<String>) -> Result<Command, ParseCmdError> {
             })
         }
         "reset" => Ok(Command::Reset),
-        "log" => Ok(Command::Log),
+        "log" => Ok(Command::Log(LogSubCommand::Day(
+            chrono::offset::Local::now().date_naive(),
+        ))),
         "version" => Ok(Command::Version),
         _ => Err(ParseCmdError::InvalidCommand(arguments[1].clone())),
     }
@@ -246,7 +261,7 @@ fn track(
     fs::write(file_path, serialized).map_err(CommandExecutionError::from)
 }
 
-fn load_day(date: chrono::NaiveDate) -> Result<Day, CommandExecutionError> {
+pub fn load_day(date: NaiveDate) -> Result<Day, CommandExecutionError> {
     let file_path = file_handling::get_file_path_for_date(date)
         .map_err(CommandExecutionError::from)
         .and_then(|path| {
@@ -267,25 +282,25 @@ fn reset() -> Result<(), CommandExecutionError> {
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-struct Day {
+pub struct Day {
     #[serde(with = "date_format")]
-    date: chrono::NaiveDate,
+    pub date: NaiveDate,
 
     #[serde(with = "time_format")]
-    check_in_time: NaiveTime,
+    pub check_in_time: NaiveTime,
 
-    chunks: Vec<Chunk>,
+    pub chunks: Vec<Chunk>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-struct Chunk {
-    project: String,
+pub struct Chunk {
+    pub project: String,
 
-    description: Option<String>,
+    pub description: Option<String>,
 
     #[serde(with = "time_format")]
-    end_time: NaiveTime,
+    pub end_time: NaiveTime,
 }
 
 mod date_format {
@@ -505,6 +520,11 @@ mod tests {
     #[test]
     fn test_parse_log() {
         let args = to_args(&["", "log"]);
-        assert_eq!(parse_command(args), Ok(Command::Log));
+        assert_eq!(
+            parse_command(args),
+            Ok(Command::Log(LogSubCommand::Day(
+                chrono::offset::Local::now().date_naive()
+            )))
+        );
     }
 }
