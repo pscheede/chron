@@ -56,22 +56,22 @@ Optional feature: Aliases for projects, allow easier tracking, with less congnit
 A daily meeting, for example, can always be added to the same project.
 `chron track daily` would then automatically select the right project.
 
-### Log
+### Reporting
 
-Tracking would not be useful, if the tracked times cannot be logged.
+Tracking would not be useful, if the tracked times cannot be reported.
 
-Logging must be possible per day, per week, and maybe even per month.
+Reporting must be possible per day, per week, and maybe even per month.
 
-The log must contain an acumulation of times per project per day.
+The report must contain an acumulation of times per project per day.
 It must also contain the total amount of work per day.
 
 It would also be nice to have an acumulation per week/month for each project.
 
 The exact output format is not yet clear, but it should be easily adaptable.
 
-- `chron log today`
-- `chron log yesterday`
-- `chron log <date>`
-- `chron log week <number>`
-- `chron log month <name>`
+- `chron report today`
+- `chron report yesterday`
+- `chron report <date>`
+- `chron report week <number>`
+- `chron report month <name>`
 

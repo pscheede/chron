@@ -4,7 +4,7 @@
 mod commands;
 mod config;
 mod file_handling;
-mod logging;
+mod reporting;
 
 use commands::{execute_command, parse_command, CommandExecutionError, ParseCmdError};
 use std::env;

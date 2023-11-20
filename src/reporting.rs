@@ -3,7 +3,7 @@ use chrono::NaiveDate;
 use std::cmp::max;
 use std::collections::HashMap;
 
-pub fn log_day(date: NaiveDate) -> Result<(), CommandExecutionError> {
+pub fn report_day(date: NaiveDate) -> Result<(), CommandExecutionError> {
     let day = load_day(date)?;
 
     let formatted_day = format_day(day);

@@ -19,7 +19,7 @@ pub enum Command {
         description: Option<String>,
     },
     Reset,
-    Log(LogSubCommand),
+    Report(ReportSubCommand),
     Version,
 }
 
@@ -31,7 +31,7 @@ pub enum ProjectsSubCommand {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum LogSubCommand {
+pub enum ReportSubCommand {
     Day(NaiveDate),
     Week(NaiveDate),
     Month(NaiveDate),
@@ -69,13 +69,13 @@ pub fn execute_command(command: Command) -> Result<(), CommandExecutionError> {
             description,
         } => track(end_time, project, description),
         Command::Reset => reset(),
-        Command::Log(subcommand) => match subcommand {
-            LogSubCommand::Day(date) => crate::logging::log_day(date),
-            LogSubCommand::Week(date) => Err(CommandExecutionError::MissingImplementation(
-                "log week".to_string(),
+        Command::Report(subcommand) => match subcommand {
+            ReportSubCommand::Day(date) => crate::reporting::report_day(date),
+            ReportSubCommand::Week(date) => Err(CommandExecutionError::MissingImplementation(
+                "report week".to_string(),
             )),
-            LogSubCommand::Month(date) => Err(CommandExecutionError::MissingImplementation(
-                "log month".to_string(),
+            ReportSubCommand::Month(date) => Err(CommandExecutionError::MissingImplementation(
+                "report month".to_string(),
             )),
         },
         Command::Version => {
@@ -163,7 +163,7 @@ pub fn parse_command(arguments: Vec<String>) -> Result<Command, ParseCmdError> {
             })
         }
         "reset" => Ok(Command::Reset),
-        "log" => Ok(Command::Log(LogSubCommand::Day(
+        "report" | "rep" => Ok(Command::Report(ReportSubCommand::Day(
             chrono::offset::Local::now().date_naive(),
         ))),
         "version" => Ok(Command::Version),
@@ -518,11 +518,11 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_log() {
-        let args = to_args(&["", "log"]);
+    fn test_parse_report() {
+        let args = to_args(&["", "report"]);
         assert_eq!(
             parse_command(args),
-            Ok(Command::Log(LogSubCommand::Day(
+            Ok(Command::Report(ReportSubCommand::Day(
                 chrono::offset::Local::now().date_naive()
             )))
         );
