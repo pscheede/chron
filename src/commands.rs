@@ -93,6 +93,7 @@ pub enum ParseCmdError {
     InvalidCommand(String),
     MissingParameter(String),
     InvalidTimeFormat(String),
+    InvalidDateFormat { expected: String, actual: String },
 }
 
 fn parse_project(cmd_name: &str, arguments: Option<&String>) -> Result<String, ParseCmdError> {
@@ -107,6 +108,7 @@ fn parse_description(arguments: Option<&[String]>) -> Option<String> {
     arguments.filter(|a| !a.is_empty()).map(|a| a.join(" "))
 }
 
+#[allow(clippy::too_many_lines)]
 pub fn parse_command(arguments: Vec<String>) -> Result<Command, ParseCmdError> {
     if arguments.len() == 1 {
         return Err(ParseCmdError::NoCommand);
@@ -169,15 +171,77 @@ pub fn parse_command(arguments: Vec<String>) -> Result<Command, ParseCmdError> {
             let subcommand = arguments.get(2).map_or("day".to_string(), String::clone);
 
             match subcommand.as_str() {
-                "day" => Ok(Command::Report(ReportSubCommand::Day(
-                    chrono::offset::Local::now().date_naive(),
-                ))),
-                "week" => Ok(Command::Report(ReportSubCommand::Week(
-                    chrono::offset::Local::now().date_naive(),
-                ))),
-                "month" => Ok(Command::Report(ReportSubCommand::Month(
-                    chrono::offset::Local::now().date_naive(),
-                ))),
+                "day" => {
+                    let day_arg =
+                        arguments
+                            .get(3)
+                            .map_or("0".to_string(), |arg| match arg.as_str() {
+                                "today" => "0".to_string(),
+                                "yesterday" => "-1".to_string(),
+                                _ => arg.clone(),
+                            });
+
+                    // first try parsing number (offset like -3), then parse as concrete date
+                    let date = match day_arg.parse::<i64>() {
+                        Ok(offset) => {
+                            chrono::offset::Local::now().date_naive()
+                                + chrono::Duration::days(offset)
+                        }
+                        Err(_) => {
+                            NaiveDate::parse_from_str(&day_arg, "%Y-%m-%d").map_err(|_| {
+                                ParseCmdError::InvalidDateFormat {
+                                    expected: "'offset' or 'YYYY-MM-DD'".to_string(),
+                                    actual: day_arg.clone(),
+                                }
+                            })?
+                        }
+                    };
+
+                    Ok(Command::Report(ReportSubCommand::Day(date)))
+                }
+                "week" => {
+                    let week_arg = arguments.get(3).map_or("0".to_string(), String::clone);
+
+                    let date = week_arg
+                        .parse::<i64>()
+                        .map(|number| {
+                            chrono::offset::Local::now().date_naive()
+                                + chrono::Duration::weeks(number)
+                        })
+                        .or_else(|_| {
+                            NaiveDate::parse_from_str(&week_arg, "%Y-%m-%d").map_err(|_| {
+                                ParseCmdError::InvalidDateFormat {
+                                    expected: "'offset' or 'YYYY-MM-DD'".to_string(),
+                                    actual: week_arg.clone(),
+                                }
+                            })
+                        })?;
+
+                    Ok(Command::Report(ReportSubCommand::Week(date)))
+                }
+                "month" => {
+                    let month_arg = arguments.get(3).map_or("0".to_string(), String::clone);
+
+                    let date = month_arg
+                        .parse::<i64>()
+                        .map(|number| {
+                            println!("WARNING: This method might not be accurate, since it assumes a month to have 30 days!\n");
+
+                            chrono::offset::Local::now().date_naive()
+                                + chrono::Duration::days(number * 30)
+                        })
+                        .or_else(|_| {
+                            NaiveDate::parse_from_str(&month_arg, "%Y-%m-%d").map_err(|_| {
+                                ParseCmdError::InvalidDateFormat {
+                                    expected: "'offset' or 'YYYY-MM-DD'"
+                                        .to_string(),
+                                    actual: month_arg.clone(),
+                                }
+                            })
+                        })?;
+
+                    Ok(Command::Report(ReportSubCommand::Month(date)))
+                }
                 _ => Err(ParseCmdError::InvalidCommand(format!(
                     "report {subcommand}"
                 ))),

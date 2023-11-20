@@ -41,6 +41,9 @@ fn main() {
             ParseCmdError::InvalidTimeFormat(t) => {
                 println!("Your time input '{t}' does not match expected format 'HH:MM'");
             }
+            ParseCmdError::InvalidDateFormat { expected, actual } => println!(
+                "Your date input '{actual}' does not match expected format '{expected}'"
+            ),
         },
     }
 }

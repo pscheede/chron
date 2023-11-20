@@ -32,10 +32,10 @@ pub fn report_week(date: NaiveDate) {
     let days: Vec<Day> = load_available_days(&weekdays);
 
     println!(
-        "# Log for week: {}
+        "# Log for: {}
 
 {}",
-        date.iso_week().week(),
+        date.format("week %W of %Y"),
         project_summary(&days)
     );
 }
@@ -57,10 +57,10 @@ pub fn report_month(date: NaiveDate) {
     let days = load_available_days(&days_of_month);
 
     println!(
-        "# Log for month: {}
+        "# Log for: {}
 
 {}",
-        date.format("%Y-%m"),
+        date.format("%B of %Y"),
         project_summary(&days)
     );
 }
@@ -118,11 +118,14 @@ fn project_summary(days: &Vec<Day>) -> String {
         format!("{fraction:.2}h ({hours}h {minutes}m)")
     };
 
-    let time_width = project_durations
-        .values()
-        .map(|duration| format_duration(duration).len())
-        .max()
-        .unwrap_or(0);
+    let time_width = max(
+        project_durations
+            .values()
+            .map(|duration| format_duration(duration).len())
+            .max()
+            .unwrap_or(0),
+        "0.00h (0h 0m)".len(),
+    );
 
     let format_summary_line =
         |p: &String, d: &String| format!("| {p:project_width$} | {d:time_width$} |");
