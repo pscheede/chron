@@ -16,7 +16,8 @@ Tracking will work in chunks.
 Each chunk will be assigned to one project.
 Break chunks will also exist.
 
-In the morning the check-in time needs to be tracked.
+In the morning the check-in time needs to be tracked. When checking in, a message should appear that can be configured freely. This message might be used for a morning TODO list.
+
 Then, at the end of each chunk, the work from the previous chunk needs to be tracked,
 i.e. assigned to a project.
 
