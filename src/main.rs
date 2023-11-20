@@ -20,11 +20,8 @@ fn main() {
                     println!("You have already checked in today, no need to check in again!");
                 }
                 CommandExecutionError::IoError(e) => println!("IO Error: {e}"),
-                CommandExecutionError::MissingImplementation(c) => {
-                    println!("The command '{c}' is not implemented yet");
-                }
-                CommandExecutionError::NotCheckedIn => {
-                    println!("Before tracking any time, you need to check in!");
+                CommandExecutionError::NotCheckedIn(date) => {
+                    println!("No check-in on date: {}!", date.format("%Y-%m-%d"));
                 }
                 CommandExecutionError::InvalidJsonFormat(e) => println!("Invalid JSON format: {e}"),
                 CommandExecutionError::UnexpectedError(e) => println!("Unexpected error: {e}"),

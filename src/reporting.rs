@@ -1,5 +1,5 @@
 use crate::commands::{load_day, CommandExecutionError, Day};
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 use std::cmp::max;
 use std::collections::HashMap;
 
@@ -12,6 +12,65 @@ pub fn report_day(date: NaiveDate) -> Result<(), CommandExecutionError> {
     Ok(())
 }
 
+pub fn report_week(date: NaiveDate) {
+    let weekdays: Vec<NaiveDate> = [
+        chrono::Weekday::Mon,
+        chrono::Weekday::Tue,
+        chrono::Weekday::Wed,
+        chrono::Weekday::Thu,
+        chrono::Weekday::Fri,
+        chrono::Weekday::Sat,
+        chrono::Weekday::Sun,
+    ]
+    .into_iter()
+    .map(|wd| {
+        NaiveDate::from_isoywd_opt(date.year(), date.iso_week().week(), wd)
+            .expect("date should be valid")
+    })
+    .collect();
+
+    let days: Vec<Day> = load_available_days(&weekdays);
+
+    println!(
+        "# Log for week: {}
+
+{}",
+        date.iso_week().week(),
+        project_summary(&days)
+    );
+}
+
+fn load_available_days(dates: &[NaiveDate]) -> Vec<Day> {
+    dates
+        .iter()
+        .filter_map(|date| {
+            load_day(*date).ok().map(|mut day| {
+                day.chunks.sort_by(|a, b| a.end_time.cmp(&b.end_time));
+                day
+            })
+        })
+        .collect()
+}
+
+pub fn report_month(date: NaiveDate) {
+    let days_of_month = get_days_of_month(date);
+    let days = load_available_days(&days_of_month);
+
+    println!(
+        "# Log for month: {}
+
+{}",
+        date.format("%Y-%m"),
+        project_summary(&days)
+    );
+}
+
+fn get_days_of_month(date: NaiveDate) -> Vec<NaiveDate> {
+    (1..=31)
+        .filter_map(|day| NaiveDate::from_ymd_opt(date.year(), date.month(), day))
+        .collect::<Vec<NaiveDate>>()
+}
+
 fn format_day(mut day: Day) -> String {
     day.chunks.sort_by(|a, b| a.end_time.cmp(&b.end_time));
 
@@ -22,7 +81,7 @@ fn format_day(mut day: Day) -> String {
 
 {}",
         day.date.format("%Y-%m-%d"),
-        project_summary(vec![&day]),
+        project_summary(&vec![day.clone()]),
         detail_table(&day)
     )
 }
@@ -30,7 +89,7 @@ fn format_day(mut day: Day) -> String {
 /// Returns a summary of projects over the given days.
 ///
 /// Expects the chunks for each day to be sorted by end time.
-fn project_summary(days: Vec<&Day>) -> String {
+fn project_summary(days: &Vec<Day>) -> String {
     let mut project_durations: HashMap<String, chrono::Duration> = HashMap::new();
 
     for day in days {
@@ -178,6 +237,7 @@ fn detail_table(day: &Day) -> String {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
     use crate::commands::{Chunk, Day};
@@ -187,7 +247,44 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    #[allow(clippy::unwrap_used)]
+    fn test_get_days_of_month() {
+        // January
+        let result = get_days_of_month(NaiveDate::from_ymd_opt(2021, 1, 23).unwrap());
+
+        assert_eq!(result.len(), 31);
+        assert_eq!(result[0], NaiveDate::from_ymd_opt(2021, 1, 1).unwrap());
+        assert_eq!(result[30], NaiveDate::from_ymd_opt(2021, 1, 31).unwrap());
+
+        // February
+        let result = get_days_of_month(NaiveDate::from_ymd_opt(2021, 2, 23).unwrap());
+
+        assert_eq!(result.len(), 28);
+        assert_eq!(result[0], NaiveDate::from_ymd_opt(2021, 2, 1).unwrap());
+        assert_eq!(result[27], NaiveDate::from_ymd_opt(2021, 2, 28).unwrap());
+
+        // February leap year
+        let result = get_days_of_month(NaiveDate::from_ymd_opt(2020, 2, 23).unwrap());
+
+        assert_eq!(result.len(), 29);
+        assert_eq!(result[0], NaiveDate::from_ymd_opt(2020, 2, 1).unwrap());
+        assert_eq!(result[28], NaiveDate::from_ymd_opt(2020, 2, 29).unwrap());
+
+        // March
+        let result = get_days_of_month(NaiveDate::from_ymd_opt(2021, 3, 23).unwrap());
+
+        assert_eq!(result.len(), 31);
+        assert_eq!(result[0], NaiveDate::from_ymd_opt(2021, 3, 1).unwrap());
+        assert_eq!(result[30], NaiveDate::from_ymd_opt(2021, 3, 31).unwrap());
+
+        // April
+        let result = get_days_of_month(NaiveDate::from_ymd_opt(2021, 4, 23).unwrap());
+
+        assert_eq!(result.len(), 30);
+        assert_eq!(result[0], NaiveDate::from_ymd_opt(2021, 4, 1).unwrap());
+        assert_eq!(result[29], NaiveDate::from_ymd_opt(2021, 4, 30).unwrap());
+    }
+
+    #[test]
     fn test_format_day() {
         let day = Day {
             date: NaiveDate::from_ymd_opt(2023, 11, 17).unwrap(),

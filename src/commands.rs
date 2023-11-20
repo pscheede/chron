@@ -71,12 +71,14 @@ pub fn execute_command(command: Command) -> Result<(), CommandExecutionError> {
         Command::Reset => reset(),
         Command::Report(subcommand) => match subcommand {
             ReportSubCommand::Day(date) => crate::reporting::report_day(date),
-            ReportSubCommand::Week(date) => Err(CommandExecutionError::MissingImplementation(
-                "report week".to_string(),
-            )),
-            ReportSubCommand::Month(date) => Err(CommandExecutionError::MissingImplementation(
-                "report month".to_string(),
-            )),
+            ReportSubCommand::Week(date) => {
+                crate::reporting::report_week(date);
+                Ok(())
+            }
+            ReportSubCommand::Month(date) => {
+                crate::reporting::report_month(date);
+                Ok(())
+            }
         },
         Command::Version => {
             println!("chron version: {}", env!("GIT_VERSION"));
@@ -163,9 +165,24 @@ pub fn parse_command(arguments: Vec<String>) -> Result<Command, ParseCmdError> {
             })
         }
         "reset" => Ok(Command::Reset),
-        "report" | "rep" => Ok(Command::Report(ReportSubCommand::Day(
-            chrono::offset::Local::now().date_naive(),
-        ))),
+        "report" | "rep" => {
+            let subcommand = arguments.get(2).map_or("day".to_string(), String::clone);
+
+            match subcommand.as_str() {
+                "day" => Ok(Command::Report(ReportSubCommand::Day(
+                    chrono::offset::Local::now().date_naive(),
+                ))),
+                "week" => Ok(Command::Report(ReportSubCommand::Week(
+                    chrono::offset::Local::now().date_naive(),
+                ))),
+                "month" => Ok(Command::Report(ReportSubCommand::Month(
+                    chrono::offset::Local::now().date_naive(),
+                ))),
+                _ => Err(ParseCmdError::InvalidCommand(format!(
+                    "report {subcommand}"
+                ))),
+            }
+        }
         "version" => Ok(Command::Version),
         _ => Err(ParseCmdError::InvalidCommand(arguments[1].clone())),
     }
@@ -174,9 +191,8 @@ pub fn parse_command(arguments: Vec<String>) -> Result<Command, ParseCmdError> {
 #[derive(Debug)]
 pub enum CommandExecutionError {
     CheckedInTwice,
-    NotCheckedIn,
+    NotCheckedIn(NaiveDate),
     IoError(std::io::Error),
-    MissingImplementation(String),
     InvalidJsonFormat(String),
     UnexpectedError(String),
     NoTrackingBeforeCheckIn,
@@ -268,7 +284,7 @@ pub fn load_day(date: NaiveDate) -> Result<Day, CommandExecutionError> {
             if path.exists() {
                 Ok(path)
             } else {
-                Err(CommandExecutionError::NotCheckedIn)
+                Err(CommandExecutionError::NotCheckedIn(date))
             }
         });
 
