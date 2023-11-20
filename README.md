@@ -22,6 +22,8 @@ i.e. assigned to a project.
 
 There will be no separate mark for the end of the day.
 
+Days should be able to be marked as days were there was no work, example for illness or vacation, so that you know in retrospect why there is no time tracked for that day.
+
 #### Chunk creation
 
 - Checking in in the morning: `chron check-in`
